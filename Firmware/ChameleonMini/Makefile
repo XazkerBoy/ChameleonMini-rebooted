@@ -140,7 +140,7 @@ else
 dfu-prog: $(TARGET).hex $(TARGET).eep
 	$(PYTHON_BIN) $(CRYPTO_TOOL) scramblehex $(TARGET).eep $(TARGET).eep.scramble
 	$(PYTHON_BIN) $(CRYPTO_TOOL) scramblehex $(TARGET).hex $(TARGET).hex.scramble
-	-dfu-programmer $(MCU) erase --force
+	dfu-programmer $(MCU) erase --force
 	dfu-programmer $(MCU) flash --eeprom --force --suppress-validation $(TARGET).eep.scramble
 	dfu-programmer $(MCU) flash --force --suppress-validation $(TARGET).hex.scramble
 	dfu-programmer $(MCU) launch

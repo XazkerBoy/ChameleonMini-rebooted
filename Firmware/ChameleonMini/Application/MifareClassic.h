@@ -241,6 +241,7 @@ void MifareClassicSetSak(uint8_t Sak);
 
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
 void MifareClassicAppDetectionInit(void);
+void MifareClassicAppDetection4KInit(void);
 #endif
 
 #ifdef CONFIG_MF_CLASSIC_BRUTE_SUPPORT

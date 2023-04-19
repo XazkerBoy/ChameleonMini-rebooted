@@ -37,6 +37,7 @@ static const MapEntryType ConfigurationMap[] PROGMEM = {
 #endif
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
     { .Id = CONFIG_MF_CLASSIC_DETECTION,     .Text = "MF_CLASSIC_DETECTION" },
+    { .Id = CONFIG_MF_CLASSIC_DETECTION_4K,     .Text = "MF_CLASSIC_DETECTION_4K" },
 #endif
 #ifdef CONFIG_MF_CLASSIC_BRUTE_SUPPORT
     { .Id = CONFIG_MF_CLASSIC_BRUTE,         .Text = "MF_CLASSIC_BRUTE" },
@@ -321,6 +322,26 @@ static const PROGMEM ConfigurationType ConfigurationTable[] = {
     .CodecInitFunc = ISO14443ACodecInit,
     .CodecTaskFunc = ISO14443ACodecTask,
     .ApplicationInitFunc = MifareClassicAppDetectionInit,
+    .ApplicationResetFunc = MifareClassicAppReset,
+    .ApplicationTaskFunc = ApplicationTaskDummy,
+    .ApplicationTickFunc = ApplicationTickDummy,
+    .ApplicationButtonFunc = ApplicationButtonFuncDummy,
+    .ApplicationProcessFunc = MifareClassicAppProcess,
+    .ApplicationGetUidFunc = MifareClassicGetUid,
+    .ApplicationSetUidFunc = MifareClassicSetUid,
+    .ApplicationGetSakFunc = MifareClassicGetSak,
+    .ApplicationSetSakFunc = MifareClassicSetSak,
+    .ApplicationGetAtqaFunc = MifareClassicGetAtqa,
+    .ApplicationSetAtqaFunc = MifareClassicSetAtqa,
+    .UidSize = MFCLASSIC_UID_SIZE,
+    .CardMemorySize = DETECTION_MEM_APP_SIZE,
+    .WorkingMemorySize = MEMORY_NO_MEMORY,
+    .ReadOnly = true
+},
+[CONFIG_MF_CLASSIC_DETECTION_4K] = {
+    .CodecInitFunc = ISO14443ACodecInit,
+    .CodecTaskFunc = ISO14443ACodecTask,
+    .ApplicationInitFunc = MifareClassicAppDetection4KInit,
     .ApplicationResetFunc = MifareClassicAppReset,
     .ApplicationTaskFunc = ApplicationTaskDummy,
     .ApplicationTickFunc = ApplicationTickDummy,

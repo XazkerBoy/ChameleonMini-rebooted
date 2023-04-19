@@ -360,6 +360,12 @@ void MifareClassicAppDetectionInit(void) {
     DetectionAttemptsKeyB = 0;
     MifareClassicAppInit(MFCLASSIC_1K_ATQA_VALUE, MFCLASSIC_1K_SAK_VALUE, false);
 }
+void MifareClassicAppDetection4KInit(void) {
+    isDetectionEnabled = true;
+    DetectionAttemptsKeyA = 0;
+    DetectionAttemptsKeyB = 0;
+    MifareClassicAppInit(MFCLASSIC_4K_ATQA_VALUE, MFCLASSIC_4K_SAK_VALUE, false);
+}
 #endif
 
 #ifdef CONFIG_MF_CLASSIC_BRUTE_SUPPORT
