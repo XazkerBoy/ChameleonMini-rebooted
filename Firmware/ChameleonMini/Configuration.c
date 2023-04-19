@@ -333,9 +333,9 @@ static const PROGMEM ConfigurationType ConfigurationTable[] = {
     .ApplicationGetAtqaFunc = MifareClassicGetAtqa,
     .ApplicationSetAtqaFunc = MifareClassicSetAtqa,
     .UidSize = MFCLASSIC_UID_SIZE,
-    .CardMemorySize = MFCLASSIC_1K_MEM_SIZE,
-    .WorkingMemorySize = DETECTION_MEM_APP_SIZE,
-    .ReadOnly = false
+    .CardMemorySize = DETECTION_MEM_APP_SIZE,
+    .WorkingMemorySize = MEMORY_NO_MEMORY,
+    .ReadOnly = true
 },
 #endif
 #ifdef CONFIG_MF_CLASSIC_BRUTE_SUPPORT
