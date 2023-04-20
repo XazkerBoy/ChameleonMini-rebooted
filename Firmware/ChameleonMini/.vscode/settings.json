@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.pio": "c",
+        "ratio": "c"
+    }
+}

@@ -10,27 +10,65 @@
 #define CRC_INIT        0x6363
 #define CRC_INIT_R      0xC6C6 /* Bit reversed */
 
-void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount)
-{
-    uint8_t* DataPtr = (uint8_t*) Buffer;
-
+void ISO14443AInitCRCA(){
     CRC.CTRL = CRC_RESET0_bm;
     CRC.CHECKSUM1 = (CRC_INIT_R >> 8) & 0xFF;
     CRC.CHECKSUM0 = (CRC_INIT_R >> 0) & 0xFF;
     CRC.CTRL = CRC_SOURCE_IO_gc;
+}
 
+void ISO14443AByteCRCA(uint8_t Byte){
+    Byte = BitReverseByte(Byte);
+    CRC.DATAIN = Byte;
+}
+
+void ISO14443ADataCRCA(uint8_t* DataPtr, uint16_t ByteCount){
     while(ByteCount--) {
         uint8_t Byte = *DataPtr++;
-        Byte = BitReverseByte(Byte);
-
-        CRC.DATAIN = Byte;
+        ISO14443AByteCRCA(Byte);
     }
+}
 
+void ISO14443AFinalCRCA(uint8_t* DataPtr){
     DataPtr[0] = BitReverseByte(CRC.CHECKSUM1);
     DataPtr[1] = BitReverseByte(CRC.CHECKSUM0);
 
     CRC.CTRL = CRC_SOURCE_DISABLE_gc;
 }
+
+void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount)
+{
+    // TODO: Does not work
+    uint8_t* DataPtr = (uint8_t*) Buffer;
+
+    ISO14443AInitCRCA();
+
+    ISO14443ADataCRCA(DataPtr, ByteCount);
+
+    ISO14443AFinalCRCA(DataPtr);
+}
+
+// void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount)
+// {
+//     uint8_t* DataPtr = (uint8_t*) Buffer;
+
+//     CRC.CTRL = CRC_RESET0_bm;
+//     CRC.CHECKSUM1 = (CRC_INIT_R >> 8) & 0xFF;
+//     CRC.CHECKSUM0 = (CRC_INIT_R >> 0) & 0xFF;
+//     CRC.CTRL = CRC_SOURCE_IO_gc;
+
+//     while(ByteCount--) {
+//         uint8_t Byte = *DataPtr++;
+//         Byte = BitReverseByte(Byte);
+
+//         CRC.DATAIN = Byte;
+//     }
+
+//     DataPtr[0] = BitReverseByte(CRC.CHECKSUM1);
+//     DataPtr[1] = BitReverseByte(CRC.CHECKSUM0);
+
+//     CRC.CTRL = CRC_SOURCE_DISABLE_gc;
+// }
 
 /* Alternative implementation if hardware CRC is not available
 #include <util/crc16.h>
@@ -48,6 +86,21 @@ void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount)
     DataPtr[1] = (Checksum >> 8) & 0x00FF;
 }
 */
+
+// bool ISO14443ACheckCRCA(const void* Buffer, uint16_t ByteCount)
+// {
+//     // TODO: Does not work
+//     const uint8_t* DataPtr = (const uint8_t*) Buffer;
+//     uint8_t Received[2];
+
+//     ISO14443AInitCRCA();
+
+//     ISO14443ADataCRCA((uint8_t*)DataPtr, ByteCount);
+
+//     ISO14443AFinalCRCA(Received);
+
+//     return (DataPtr[0] == Received[0]) && (DataPtr[1] == Received[1]);
+// }
 
 bool ISO14443ACheckCRCA(const void* Buffer, uint16_t ByteCount)
 {
