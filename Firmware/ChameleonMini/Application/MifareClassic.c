@@ -841,18 +841,27 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
                 // Save reader's auth phase 2 answer to our nonce from STATE_ACTIVE
                 memcpy(DetectionDataSave+DETECTION_SAVE_P2_OFFSET, Buffer, DETECTION_READER_AUTH_P2_SIZE);
+                TerminalSendString("-------------------\nData: ");
+                TerminalSendBlock(DetectionDataSave, DETECTION_BYTES_PER_SAVE);
+
                 // Align data storage in each KEYX dedicated memory space, and iterate counters
                 uint8_t memSaveAddr;
                 if (DetectionDataSave[DETECTION_KEYX_SAVE_IDX] == MFCLASSIC_CMD_AUTH_A) {
                     memSaveAddr = (DETECTION_MEM_DATA_START_ADDR + (DetectionAttemptsKeyA * DETECTION_BYTES_PER_SAVE));
+                    TerminalSendString("\nKeyA: ");
+                    TerminalSendByte(DetectionAttemptsKeyA);
                     DetectionAttemptsKeyA++;
                     DetectionAttemptsKeyA = DetectionAttemptsKeyA % DETECTION_MEM_MAX_KEYX_SAVES;
                 } else {
                     memSaveAddr = (DETECTION_MEM_KEYX_SEPARATOR_OFFSET + (DetectionAttemptsKeyB * DETECTION_BYTES_PER_SAVE));
+                    TerminalSendString("\nKeyB: ");
+                    TerminalSendByte(DetectionAttemptsKeyB);
                     DetectionAttemptsKeyB++;
                     DetectionAttemptsKeyB = DetectionAttemptsKeyB % DETECTION_MEM_MAX_KEYX_SAVES;
                 }
                 // Write to app memory
+                TerminalSendString("\nAddress: ");
+                TerminalSendByte(memSaveAddr);
                 if(!isDetectionCanaryWritten) {
                     AppCardMemoryWrite(DetectionCanary, DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_SIZE);
                     isDetectionCanaryWritten = true;
