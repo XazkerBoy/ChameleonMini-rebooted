@@ -41,9 +41,10 @@ void TerminalSendStringP(const char* s) {
 void TerminalSendHEXBlock(const void* Buffer, uint16_t ByteCount)
 {
     char sendArray[4];
+    uint8_t* byteBuffer = (uint8_t*) Buffer;
     for (uint16_t i = 0; i < ByteCount; i++)
     {
-        sprintf(sendArray, "%02X", (uint8_t)Buffer[i]);
+        sprintf(sendArray, "%02X", byteBuffer[i]);
         TerminalSendString(sendArray);
     }
 }
