@@ -841,7 +841,6 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
             if(isDetectionEnabled) {
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
                 // Save reader's auth phase 2 answer to our nonce from STATE_ACTIVE
-                char buffer[DETECTION_BYTES_PER_SAVE];
                 memcpy(DetectionDataSave+DETECTION_SAVE_P2_OFFSET, Buffer, DETECTION_READER_AUTH_P2_SIZE);
                 TerminalSendString("-------------------\nData: ");
                 TerminalSendHEXBlock(DetectionDataSave, DETECTION_BYTES_PER_SAVE);
