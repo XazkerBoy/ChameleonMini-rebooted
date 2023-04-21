@@ -847,7 +847,7 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
                 TerminalSendHEXBlock(DetectionDataSave, DETECTION_BYTES_PER_SAVE);
 
                 // Align data storage in each KEYX dedicated memory space, and iterate counters
-                uint8_t memSaveAddr;
+                uint16_t memSaveAddr;
                 if (DetectionDataSave[DETECTION_KEYX_SAVE_IDX] == MFCLASSIC_CMD_AUTH_A) {
                     memSaveAddr = (DETECTION_MEM_DATA_START_ADDR + (DetectionAttemptsKeyA * DETECTION_BYTES_PER_SAVE));
                     TerminalSendString("\nKeyA: ");
