@@ -44,7 +44,8 @@ void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount)
 
     ISO14443ADataCRCA(DataPtr, ByteCount);
 
-    ISO14443AFinalCRCA(DataPtr+ByteCount);
+    DataPtr += ByteCount;
+    ISO14443AFinalCRCA(DataPtr);
 }
 
 // void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount)
@@ -97,6 +98,7 @@ bool ISO14443ACheckCRCA(const void* Buffer, uint16_t ByteCount)
 
     ISO14443AFinalCRCA(Received);
 
+    DataPtr += ByteCount;
     return (DataPtr[0] == Received[0]) && (DataPtr[1] == Received[1]);
 }
 
