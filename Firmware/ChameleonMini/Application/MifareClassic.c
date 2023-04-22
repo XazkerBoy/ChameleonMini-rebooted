@@ -14,7 +14,7 @@
 #include "MifareClassic.h"
 #include "ISO14443-3A.h"
 #include "Crypto1.h"
-#include "../Terminal/Terminal.h"
+// #include "../Terminal/Terminal.h"
 #include "../Random.h"
 #include "../Codec/ISO14443-2A.h"
 #include "../Memory/Memory.h"
@@ -341,16 +341,19 @@ void MifareClassicAppInit(uint16_t ATQA_4B, uint8_t SAK, bool is7B) {
 }
 
 void MifareClassicAppInit1K(void) {
+    isDetectionEnabled = false;
     MifareClassicAppInit( MFCLASSIC_1K_ATQA_VALUE, MFCLASSIC_1K_SAK_VALUE,
                           (ActiveConfiguration.UidSize == MFCLASSIC_UID_7B_SIZE) );
 }
 
 void MifareClassicAppInit4K(void) {
+    isDetectionEnabled = false;
     MifareClassicAppInit( MFCLASSIC_4K_ATQA_VALUE, MFCLASSIC_4K_SAK_VALUE,
                           (ActiveConfiguration.UidSize == MFCLASSIC_UID_7B_SIZE) );
 }
 
 void MifareClassicAppInitMini(void) {
+    isDetectionEnabled = false;
     MifareClassicAppInit(MFCLASSIC_MINI_ATQA_VALUE, MFCLASSIC_MINI_SAK_VALUE, false);
 }
 
@@ -842,27 +845,19 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
                 // Save reader's auth phase 2 answer to our nonce from STATE_ACTIVE
                 memcpy(DetectionDataSave+DETECTION_SAVE_P2_OFFSET, Buffer, DETECTION_READER_AUTH_P2_SIZE);
-                TerminalSendString("-------------------\nData: ");
-                TerminalSendHEXBlock(DetectionDataSave, DETECTION_BYTES_PER_SAVE);
 
                 // Align data storage in each KEYX dedicated memory space, and iterate counters
                 uint16_t memSaveAddr;
                 if (DetectionDataSave[DETECTION_KEYX_SAVE_IDX] == MFCLASSIC_CMD_AUTH_A) {
                     memSaveAddr = (DETECTION_MEM_DATA_START_ADDR + (DetectionAttemptsKeyA * DETECTION_BYTES_PER_SAVE));
-                    TerminalSendString("\nKeyA: ");
-                    TerminalSendHEXByte(DetectionAttemptsKeyA);
                     DetectionAttemptsKeyA++;
                     DetectionAttemptsKeyA = DetectionAttemptsKeyA % DETECTION_MEM_MAX_KEYX_SAVES;
                 } else {
                     memSaveAddr = (DETECTION_MEM_KEYX_SEPARATOR_OFFSET + (DetectionAttemptsKeyB * DETECTION_BYTES_PER_SAVE));
-                    TerminalSendString("\nKeyB: ");
-                    TerminalSendHEXByte(DetectionAttemptsKeyB);
                     DetectionAttemptsKeyB++;
                     DetectionAttemptsKeyB = DetectionAttemptsKeyB % DETECTION_MEM_MAX_KEYX_SAVES;
                 }
                 // Write to app memory
-                TerminalSendString("\nAddress: ");
-                TerminalSendHEXByte(memSaveAddr);
                 if(!isDetectionCanaryWritten) {
                     AppCardMemoryWrite(DetectionCanary, DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_SIZE);
                     isDetectionCanaryWritten = true;
