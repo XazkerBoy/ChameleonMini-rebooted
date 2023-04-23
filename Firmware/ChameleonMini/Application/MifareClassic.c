@@ -590,19 +590,20 @@ void mfcHandleAuthenticationRequest(bool isNested, uint8_t * Buffer, uint16_t * 
         // Save reader's auth phase 1: KEY type (A or B), and sector number
         memcpy(DetectionDataSave, Buffer, DETECTION_READER_AUTH_P1_SIZE);
         // Set selected key to be the DETECTION canary
-        // AppWorkingMemoryRead(Key, DETECTION_BLOCK0_CANARY_ADDR, MFCLASSIC_MEM_KEY_SIZE);
+        AppWorkingMemoryRead(Key, DETECTION_BLOCK0_CANARY_ADDR, MFCLASSIC_MEM_KEY_SIZE);
 #endif
     /* Set key address and loads it */
-    }
-    /* Fix for MFClassic 4k cards */
-    if(Buffer[1] >= 128) {
-        SectorAddress = (Buffer[1] & MFCLASSIC_MEM_BIGSECTOR_ADDR_MASK) * MFCLASSIC_MEM_BYTES_PER_BLOCK;
-        KeyOffset += MFCLASSIC_MEM_KEY_BIGSECTOR_OFFSET;
-        AccessOffset += MFCLASSIC_MEM_KEY_BIGSECTOR_OFFSET;
     } else {
-        SectorAddress = (Buffer[1] & MFCLASSIC_MEM_SECTOR_ADDR_MASK) * MFCLASSIC_MEM_BYTES_PER_BLOCK;
+        /* Fix for MFClassic 4k cards */
+        if(Buffer[1] >= 128) {
+            SectorAddress = (Buffer[1] & MFCLASSIC_MEM_BIGSECTOR_ADDR_MASK) * MFCLASSIC_MEM_BYTES_PER_BLOCK;
+            KeyOffset += MFCLASSIC_MEM_KEY_BIGSECTOR_OFFSET;
+            AccessOffset += MFCLASSIC_MEM_KEY_BIGSECTOR_OFFSET;
+        } else {
+            SectorAddress = (Buffer[1] & MFCLASSIC_MEM_SECTOR_ADDR_MASK) * MFCLASSIC_MEM_BYTES_PER_BLOCK;
+        }
+        AppCardMemoryRead(Key, ((uint16_t)(SectorAddress + KeyOffset)), MFCLASSIC_MEM_KEY_SIZE);
     }
-    AppCardMemoryRead(Key, ((uint16_t)(SectorAddress + KeyOffset)), MFCLASSIC_MEM_KEY_SIZE);
 
 
     /* set KeyInUse for global use to keep info about authentication */
@@ -839,6 +840,7 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
             break; /* End of state ACTIVE */
 
         case STATE_AUTHING:
+            if(isDetectionEnabled) {
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
             // Save reader's auth phase 2 answer to our nonce from STATE_ACTIVE
             memcpy(DetectionDataSave+DETECTION_SAVE_P2_OFFSET, Buffer, DETECTION_READER_AUTH_P2_SIZE);
@@ -862,23 +864,26 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
             AppWorkingMemoryWrite(DetectionDataSave, memSaveAddr, DETECTION_BYTES_PER_SAVE);
             State = STATE_ACTIVE;
 #endif
-            /* Reader delivers an encrypted nonce. We use it
-            * to setup the crypto1 LFSR in nonlinear feedback mode.
-            * Furthermore it delivers an encrypted answer. Decrypt and check it */
-            Crypto1Auth(&Buffer[0]);
-            mfcDecryptBuffer(&Buffer[MFCLASSIC_MEM_NONCE_SIZE], MFCLASSIC_MEM_NONCE_SIZE);
-            if ( !memcmp(&Buffer[MFCLASSIC_MEM_NONCE_SIZE], ReaderResponse, MFCLASSIC_MEM_NONCE_SIZE) ) {
-                /* Reader is authenticated. Encrypt the precalculated card response
-                * and generate the parity bits. */
-                State = STATE_AUTHED_IDLE;
-                retSize = (MFCLASSIC_CMD_AUTH_BA_FRAME_SIZE * BITS_PER_BYTE) | ISO14443A_APP_CUSTOM_PARITY;
             } else {
-        /* Just reset on authentication error. */
-                State = STATE_IDLE;
-        /* In detection mode, communication can continue. */
-                // if(isDetectionEnabled)
-                //     State = STATE_ACTIVE;
+                /* Reader delivers an encrypted nonce. We use it
+                * to setup the crypto1 LFSR in nonlinear feedback mode.
+                * Furthermore it delivers an encrypted answer. Decrypt and check it */
+                Crypto1Auth(&Buffer[0]);
+                mfcDecryptBuffer(&Buffer[MFCLASSIC_MEM_NONCE_SIZE], MFCLASSIC_MEM_NONCE_SIZE);
+                if ( !memcmp(&Buffer[MFCLASSIC_MEM_NONCE_SIZE], ReaderResponse, MFCLASSIC_MEM_NONCE_SIZE) ) {
+                    /* Reader is authenticated. Encrypt the precalculated card response
+                    * and generate the parity bits. */
+                    mfcEncryptBuffer(Buffer, CardResponse, MFCLASSIC_MEM_NONCE_SIZE);
+                    State = STATE_AUTHED_IDLE;
+                    retSize = (MFCLASSIC_CMD_AUTH_BA_FRAME_SIZE * BITS_PER_BYTE) | ISO14443A_APP_CUSTOM_PARITY;
+                } else {
+		    /* Just reset on authentication error. */
+                    State = STATE_IDLE;
+		    /* In detection mode, communication can continue. */
+                    if(isDetectionEnabled)
+                        State = STATE_ACTIVE;
 
+                }
             }
             break; /* End of state AUTHING */
 
