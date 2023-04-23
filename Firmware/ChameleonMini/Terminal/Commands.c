@@ -415,8 +415,9 @@ CommandStatusIdType CommandGetUltralightPassword(char* OutParam) {
 CommandStatusIdType CommandGetDetection(char* OutParam) {
     /* Initialize CRC for chunked calculation */
     ISO14443AInitCRCA();
-    /* Read UID / s0-b0, calculate its CRC, but don't send it yet */
-    AppCardMemoryRead(OutParam, MFCLASSIC_MEM_S0B0_ADDRESS, DETECTION_MEM_BLOCK0_SIZE);
+    /* Read UID from card and canary from working memory / s0-b0, calculate its CRC, but don't send it yet */
+    AppCardMemoryRead(OutParam, MFCLASSIC_MEM_S0B0_ADDRESS, DETECTION_MEM_BLOCK0_SIZE-DETECTION_BLOCK0_CANARY_SIZE);
+    AppWorkingMemoryRead(OutParam+DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_SIZE);
     ISO14443ADataCRCA((uint8_t*)OutParam, DETECTION_MEM_BLOCK0_SIZE);
     TerminalSendBlock(OutParam, DETECTION_MEM_BLOCK0_SIZE);
     
@@ -431,7 +432,7 @@ CommandStatusIdType CommandGetDetection(char* OutParam) {
         } else {
             ReadLength = TERMINAL_BUFFER_SIZE - 1;
         }
-        AppCardMemoryRead(OutParam, DETECTION_MEM_DATA_START_ADDR+Offset, ReadLength);
+        AppWorkingMemoryRead(OutParam, DETECTION_MEM_DATA_START_ADDR+Offset, ReadLength);
         ISO14443ADataCRCA((uint8_t*)OutParam, ReadLength);
         TerminalSendBlock(OutParam, ReadLength);
         Offset += ReadLength;

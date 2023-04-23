@@ -334,9 +334,9 @@ static const PROGMEM ConfigurationType ConfigurationTable[] = {
     .ApplicationGetAtqaFunc = MifareClassicGetAtqa,
     .ApplicationSetAtqaFunc = MifareClassicSetAtqa,
     .UidSize = MFCLASSIC_UID_SIZE,
-    .CardMemorySize = DETECTION_MEM_APP_SIZE,
-    .WorkingMemorySize = MEMORY_NO_MEMORY,
-    .ReadOnly = true
+    .CardMemorySize = MFCLASSIC_1K_MEM_SIZE,
+    .WorkingMemorySize = DETECTION_MEM_APP_SIZE,
+    .ReadOnly = false
 },
 [CONFIG_MF_CLASSIC_DETECTION_4K] = {
     .CodecInitFunc = ISO14443ACodecInit,
@@ -354,9 +354,9 @@ static const PROGMEM ConfigurationType ConfigurationTable[] = {
     .ApplicationGetAtqaFunc = MifareClassicGetAtqa,
     .ApplicationSetAtqaFunc = MifareClassicSetAtqa,
     .UidSize = MFCLASSIC_UID_SIZE,
-    .CardMemorySize = DETECTION_MEM_APP_SIZE,
-    .WorkingMemorySize = MEMORY_NO_MEMORY,
-    .ReadOnly = true
+    .CardMemorySize = MFCLASSIC_4K_MEM_SIZE,
+    .WorkingMemorySize = DETECTION_MEM_APP_SIZE,
+    .ReadOnly = false
 },
 #endif
 #ifdef CONFIG_MF_CLASSIC_BRUTE_SUPPORT
