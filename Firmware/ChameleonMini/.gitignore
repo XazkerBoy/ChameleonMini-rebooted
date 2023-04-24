@@ -42,6 +42,7 @@ settings/
 *.eep
 *.elf
 *.hex
+*.scramble
 *.map
 *.srec
 *.atsuo

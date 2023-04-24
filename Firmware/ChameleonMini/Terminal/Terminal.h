@@ -40,8 +40,10 @@ void TerminalSendBlock(const void* Buffer, uint16_t ByteCount);
 INLINE void TerminalSendChar(char c);
 void TerminalSendString(const char* s);
 void TerminalSendStringP(const char* s);
+#if 0
 void TerminalSendHEXBlock(const void* Buffer, uint16_t ByteCount);
 void TerminalSendHEXByte(uint8_t Byte);
+#endif
 
 void EVENT_USB_Device_Connect(void);
 void EVENT_USB_Device_Disconnect(void);

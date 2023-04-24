@@ -14,7 +14,6 @@
 #include "MifareClassic.h"
 #include "ISO14443-3A.h"
 #include "Crypto1.h"
-// #include "../Terminal/Terminal.h"
 #include "../Random.h"
 #include "../Codec/ISO14443-2A.h"
 #include "../Memory/Memory.h"
