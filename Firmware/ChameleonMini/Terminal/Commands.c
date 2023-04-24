@@ -413,16 +413,33 @@ CommandStatusIdType CommandGetUltralightPassword(char* OutParam) {
 
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
 CommandStatusIdType CommandGetDetection(char* OutParam) {
-    /* Read UID / s0-b0 */
-    AppCardMemoryRead(OutParam, MFCLASSIC_MEM_S0B0_ADDRESS, DETECTION_MEM_BLOCK0_SIZE);
-    /* Read saved nonce data from authentication */
-    AppCardMemoryRead(OutParam+DETECTION_MEM_BLOCK0_SIZE, DETECTION_MEM_DATA_START_ADDR, DETECTION_MEM_MFKEY_DATA_LEN);
-    /* Add file integrity to byte. This adds 2 bytes (209, 210) to DETECTION_MEM_APP_SIZE */
-    ISO14443AAppendCRCA(OutParam, DETECTION_MEM_APP_SIZE);
-    /* Send data + CRC */
-    for(uint8_t num=0; num < DETECTION_MEM_APP_SIZE+2; num++) {
-       TerminalSendChar(OutParam[num]);
+    /* Initialize CRC for chunked calculation */
+    ISO14443AInitCRCA();
+    /* Read UID from card and canary from working memory / s0-b0, calculate its CRC, but don't send it yet */
+    AppCardMemoryRead(OutParam, MFCLASSIC_MEM_S0B0_ADDRESS, DETECTION_MEM_BLOCK0_SIZE-DETECTION_BLOCK0_CANARY_SIZE);
+    AppWorkingMemoryRead(OutParam+DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_SIZE);
+    ISO14443ADataCRCA((uint8_t*)OutParam, DETECTION_MEM_BLOCK0_SIZE);
+    TerminalSendBlock(OutParam, DETECTION_MEM_BLOCK0_SIZE);
+    
+    /* Read and send saved nonce data from authentication */
+    uint16_t Offset = 0;
+    uint16_t ReadLength = 0;
+    while (Offset < DETECTION_MEM_MFKEY_DATA_LEN){
+        // Read 256 bytes (TERMINAL_BUFFER_SIZE) at a time
+        // If we are at the end of the data, read the remaining bytes
+        if (Offset + TERMINAL_BUFFER_SIZE - 1 > DETECTION_MEM_MFKEY_DATA_LEN){
+            ReadLength = DETECTION_MEM_MFKEY_DATA_LEN - Offset;
+        } else {
+            ReadLength = TERMINAL_BUFFER_SIZE - 1;
+        }
+        AppWorkingMemoryRead(OutParam, DETECTION_MEM_DATA_START_ADDR+Offset, ReadLength);
+        ISO14443ADataCRCA((uint8_t*)OutParam, ReadLength);
+        TerminalSendBlock(OutParam, ReadLength);
+        Offset += ReadLength;
     }
+    /* Send final CRC */
+    ISO14443AFinalCRCA((uint8_t*)OutParam);
+    TerminalSendBlock(OutParam, 2);
     OutParam[0] = 0;
     return COMMAND_INFO_OK_ID;
 }

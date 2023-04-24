@@ -45,6 +45,10 @@
 #define ISO14443A_CALC_BCC(ByteBuffer) \
     ( ByteBuffer[0] ^ ByteBuffer[1] ^ ByteBuffer[2] ^ ByteBuffer[3] )
 
+void ISO14443AInitCRCA(void);
+void ISO14443AByteCRCA(uint8_t Byte);
+void ISO14443ADataCRCA(uint8_t* DataPtr, uint16_t ByteCount);
+void ISO14443AFinalCRCA(uint8_t* DataPtr);
 void ISO14443AAppendCRCA(void* Buffer, uint16_t ByteCount);
 bool ISO14443ACheckCRCA(const void* Buffer, uint16_t ByteCount);
 bool ISO14443AIsWakeUp(uint8_t* Buffer, bool FromHalt);

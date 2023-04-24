@@ -14,6 +14,7 @@
 #include "MifareClassic.h"
 #include "ISO14443-3A.h"
 #include "Crypto1.h"
+// #include "../Terminal/Terminal.h"
 #include "../Random.h"
 #include "../Codec/ISO14443-2A.h"
 #include "../Memory/Memory.h"
@@ -340,16 +341,19 @@ void MifareClassicAppInit(uint16_t ATQA_4B, uint8_t SAK, bool is7B) {
 }
 
 void MifareClassicAppInit1K(void) {
+    isDetectionEnabled = false;
     MifareClassicAppInit( MFCLASSIC_1K_ATQA_VALUE, MFCLASSIC_1K_SAK_VALUE,
                           (ActiveConfiguration.UidSize == MFCLASSIC_UID_7B_SIZE) );
 }
 
 void MifareClassicAppInit4K(void) {
+    isDetectionEnabled = false;
     MifareClassicAppInit( MFCLASSIC_4K_ATQA_VALUE, MFCLASSIC_4K_SAK_VALUE,
                           (ActiveConfiguration.UidSize == MFCLASSIC_UID_7B_SIZE) );
 }
 
 void MifareClassicAppInitMini(void) {
+    isDetectionEnabled = false;
     MifareClassicAppInit(MFCLASSIC_MINI_ATQA_VALUE, MFCLASSIC_MINI_SAK_VALUE, false);
 }
 
@@ -577,7 +581,6 @@ void mfcHandleAuthenticationRequest(bool isNested, uint8_t * Buffer, uint16_t * 
     uint8_t Uid[MFCLASSIC_UID_SIZE];
     uint16_t KeyOffset = (Buffer[0] == MFCLASSIC_CMD_AUTH_A) ? MFCLASSIC_MEM_KEY_A_OFFSET : MFCLASSIC_MEM_KEY_B_OFFSET;
     uint16_t AccessOffset = MFCLASSIC_MEM_KEY_A_OFFSET + MFCLASSIC_MEM_KEY_SIZE;
-    uint16_t KeyAddress;
     //uint8_t Sector = Buffer[1];
 
     /* Save Nonce in detection mode */
@@ -587,7 +590,7 @@ void mfcHandleAuthenticationRequest(bool isNested, uint8_t * Buffer, uint16_t * 
         // Save reader's auth phase 1: KEY type (A or B), and sector number
         memcpy(DetectionDataSave, Buffer, DETECTION_READER_AUTH_P1_SIZE);
         // Set selected key to be the DETECTION canary
-        KeyAddress = DETECTION_BLOCK0_CANARY_ADDR;
+        AppWorkingMemoryRead(Key, DETECTION_BLOCK0_CANARY_ADDR, MFCLASSIC_MEM_KEY_SIZE);
 #endif
     /* Set key address and loads it */
     } else {
@@ -599,8 +602,9 @@ void mfcHandleAuthenticationRequest(bool isNested, uint8_t * Buffer, uint16_t * 
         } else {
             SectorAddress = (Buffer[1] & MFCLASSIC_MEM_SECTOR_ADDR_MASK) * MFCLASSIC_MEM_BYTES_PER_BLOCK;
         }
-        KeyAddress = (uint16_t) SectorAddress + KeyOffset;
+        AppCardMemoryRead(Key, ((uint16_t)(SectorAddress + KeyOffset)), MFCLASSIC_MEM_KEY_SIZE);
     }
+
 
     /* set KeyInUse for global use to keep info about authentication */
     KeyInUse = Buffer[0] & 1;
@@ -617,7 +621,6 @@ void mfcHandleAuthenticationRequest(bool isNested, uint8_t * Buffer, uint16_t * 
     } else {
         AppCardMemoryRead(Uid, MFCLASSIC_MEM_UID_CL1_ADDRESS, MFCLASSIC_MEM_UID_CL1_SIZE);
     }
-    AppCardMemoryRead(Key, KeyAddress, MFCLASSIC_MEM_KEY_SIZE);
 
     /* Proceed with nested or regular authent */
     if(isNested) {
@@ -839,26 +842,27 @@ uint16_t MifareClassicAppProcess(uint8_t* Buffer, uint16_t BitCount) {
         case STATE_AUTHING:
             if(isDetectionEnabled) {
 #ifdef CONFIG_MF_CLASSIC_DETECTION_SUPPORT
-                // Save reader's auth phase 2 answer to our nonce from STATE_ACTIVE
-                memcpy(DetectionDataSave+DETECTION_SAVE_P2_OFFSET, Buffer, DETECTION_READER_AUTH_P2_SIZE);
-                // Align data storage in each KEYX dedicated memory space, and iterate counters
-                uint8_t memSaveAddr;
-                if (DetectionDataSave[DETECTION_KEYX_SAVE_IDX] == MFCLASSIC_CMD_AUTH_A) {
-                    memSaveAddr = (DETECTION_MEM_DATA_START_ADDR + (DetectionAttemptsKeyA * DETECTION_BYTES_PER_SAVE));
-                    DetectionAttemptsKeyA++;
-                    DetectionAttemptsKeyA = DetectionAttemptsKeyA % DETECTION_MEM_MAX_KEYX_SAVES;
-                } else {
-                    memSaveAddr = (DETECTION_MEM_KEYX_SEPARATOR_OFFSET + (DetectionAttemptsKeyB * DETECTION_BYTES_PER_SAVE));
-                    DetectionAttemptsKeyB++;
-                    DetectionAttemptsKeyB = DetectionAttemptsKeyB % DETECTION_MEM_MAX_KEYX_SAVES;
-                }
-                // Write to app memory
-                if(!isDetectionCanaryWritten) {
-                    AppCardMemoryWrite(DetectionCanary, DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_SIZE);
-                    isDetectionCanaryWritten = true;
-                }
-                AppCardMemoryWrite(DetectionDataSave, memSaveAddr, DETECTION_BYTES_PER_SAVE);
-                State = STATE_ACTIVE;
+            // Save reader's auth phase 2 answer to our nonce from STATE_ACTIVE
+            memcpy(DetectionDataSave+DETECTION_SAVE_P2_OFFSET, Buffer, DETECTION_READER_AUTH_P2_SIZE);
+
+            // Align data storage in each KEYX dedicated memory space, and iterate counters
+            uint16_t memSaveAddr;
+            if (DetectionDataSave[DETECTION_KEYX_SAVE_IDX] == MFCLASSIC_CMD_AUTH_A) {
+                memSaveAddr = (DETECTION_MEM_DATA_START_ADDR + (DetectionAttemptsKeyA * DETECTION_BYTES_PER_SAVE));
+                DetectionAttemptsKeyA++;
+                DetectionAttemptsKeyA = DetectionAttemptsKeyA % DETECTION_MEM_MAX_KEYX_SAVES;
+            } else {
+                memSaveAddr = (DETECTION_MEM_KEYX_SEPARATOR_OFFSET + (DetectionAttemptsKeyB * DETECTION_BYTES_PER_SAVE));
+                DetectionAttemptsKeyB++;
+                DetectionAttemptsKeyB = DetectionAttemptsKeyB % DETECTION_MEM_MAX_KEYX_SAVES;
+            }
+            // Write to app memory
+            if(!isDetectionCanaryWritten) {
+                AppWorkingMemoryWrite(DetectionCanary, DETECTION_BLOCK0_CANARY_ADDR, DETECTION_BLOCK0_CANARY_SIZE);
+                isDetectionCanaryWritten = true;
+            }
+            AppWorkingMemoryWrite(DetectionDataSave, memSaveAddr, DETECTION_BYTES_PER_SAVE);
+            State = STATE_ACTIVE;
 #endif
             } else {
                 /* Reader delivers an encrypted nonce. We use it

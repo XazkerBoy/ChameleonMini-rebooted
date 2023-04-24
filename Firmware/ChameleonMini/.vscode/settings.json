@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.pio": "c",
+        "ratio": "c",
+        "array": "cpp",
+        "compare": "cpp"
+    }
+}

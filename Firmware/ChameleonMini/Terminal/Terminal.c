@@ -38,6 +38,24 @@ void TerminalSendStringP(const char* s) {
     }
 }
 
+void TerminalSendHEXBlock(const void* Buffer, uint16_t ByteCount)
+{
+    char sendArray[4];
+    uint8_t* byteBuffer = (uint8_t*) Buffer;
+    for (uint16_t i = 0; i < ByteCount; i++)
+    {
+        sprintf(sendArray, "%02X", byteBuffer[i]);
+        TerminalSendString(sendArray);
+    }
+}
+
+void TerminalSendHEXByte(uint8_t Byte)
+{
+    char sendArray[4];
+    sprintf(sendArray, "%02X", Byte);
+    TerminalSendString(sendArray);
+}
+
 #if 0
 void TerminalSendBuffer(void* Buffer, uint16_t ByteCount) {
     char* pTerminalBuffer = (char*) TerminalBuffer;
